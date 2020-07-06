@@ -4,6 +4,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.text.TextUtils;
+import android.widget.DatePicker;
 import android.widget.NumberPicker;
 import android.widget.TimePicker;
 
@@ -13,12 +16,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TimePickerDialog extends android.app.TimePickerDialog {
-	final OnTimeSetListener mCallback;
-	final int mIncrement;
-	final int mHourOfDay, mMinute;
-	TimePicker mTimePicker;
+	private final OnTimeSetListener mCallback;
+	private final int mIncrement;
+	private final int mHourOfDay, mMinute;
+	private TimePicker mTimePicker;
+	private CharSequence mTitle;
 	// In Honeycomb upwards, we have access to the time picker. In Lollipop, the time picker has changed to a radial picker, and we can't change the interval.
-	boolean mIsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
+	private boolean mIsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
 
 	public TimePickerDialog(Context context, OnTimeSetListener callBack, int hourOfDay, int minute, boolean is24HourView, int increment) {
 		super(context, callBack, hourOfDay, minute, is24HourView);
@@ -62,6 +66,11 @@ public class TimePickerDialog extends android.app.TimePickerDialog {
 	@Override
 	public void onTimeChanged(TimePicker view, int hourOfDay, int minute) {
 		super.onTimeChanged(view, hourOfDay, mIsSupported ? minute * mIncrement : minute);
+
+		// If set, enforce title.
+		if (!TextUtils.isEmpty(mTitle)) {
+			setTitle(mTitle);
+		}
 	}
 
 	@Override
@@ -79,10 +88,10 @@ public class TimePickerDialog extends android.app.TimePickerDialog {
 		try {
 			Class<?> rClass = Class.forName("com.android.internal.R$id");
 			Field timePicker = rClass.getField("timePicker");
-			mTimePicker = (TimePicker)findViewById(timePicker.getInt(null));
+			mTimePicker = (TimePicker) findViewById(timePicker.getInt(null));
 			Field m = rClass.getField("minute");
 
-			NumberPicker mMinuteSpinner = (NumberPicker)mTimePicker.findViewById(m.getInt(null));
+			NumberPicker mMinuteSpinner = (NumberPicker) mTimePicker.findViewById(m.getInt(null));
 			if (mMinuteSpinner == null) {
 				mTimePicker = null;
 				mIsSupported = false;
@@ -101,7 +110,7 @@ public class TimePickerDialog extends android.app.TimePickerDialog {
 				displayedValues.add(String.format("%02d", i));
 			}
 
-			setDisplayedValues.invoke(mMinuteSpinner, (Object)displayedValues.toArray(new String[0]));
+			setDisplayedValues.invoke(mMinuteSpinner, (Object) displayedValues.toArray(new String[0]));
 			updateTime(mHourOfDay, mIsSupported ? mMinute / mIncrement : mMinute);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -114,5 +123,12 @@ public class TimePickerDialog extends android.app.TimePickerDialog {
 
 	public void setCancelText(String text) {
 		setButton(BUTTON_NEGATIVE, text, this);
+	}
+
+	public void setPermanentTitle(CharSequence title) {
+		mTitle = title;
+		if (!TextUtils.isEmpty(mTitle)) {
+			setTitle(title);
+		}
 	}
 }
